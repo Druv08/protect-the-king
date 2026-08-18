@@ -158,6 +158,46 @@ struct FPlayerRoundStats
 	UPROPERTY(BlueprintReadWrite, Category = "Round|Combat")
 	TMap<EEnemyType, FEnemyTypeRoundPerformance> PerformanceByEnemyType;
 
+	// --- Player combat activity ------------------------------------------------------
+	// Added in Phase 2. DamageDealtBySide above covers player + AI guards combined;
+	// these three isolate what the player-controlled guard did.
+
+	/** Attack inputs the player-controlled guard committed, whether or not they connected. */
+	UPROPERTY(BlueprintReadWrite, Category = "Round|Combat")
+	int32 PlayerAttackCount = 0;
+
+	/** Subset of PlayerAttackCount that actually damaged an enemy. */
+	UPROPERTY(BlueprintReadWrite, Category = "Round|Combat")
+	int32 PlayerAttacksLandedCount = 0;
+
+	/** Total damage dealt by the player-controlled guard only. */
+	UPROPERTY(BlueprintReadWrite, Category = "Round|Combat")
+	float PlayerDamageDealtTotal = 0.f;
+
+	// --- King exposure ----------------------------------------------------------------
+	// Added in Phase 2. KingDamageTakenBySide above holds the amounts; these describe the
+	// shape of the exposure (how often, how long, how crowded) for the Phase 3 score.
+
+	/** How many separate times the King was damaged, independent of amount. */
+	UPROPERTY(BlueprintReadWrite, Category = "Round|King")
+	int32 KingDamageEventCount = 0;
+
+	/** Seconds at least one enemy was inside the King danger radius. */
+	UPROPERTY(BlueprintReadWrite, Category = "Round|King")
+	float KingInDangerSeconds = 0.f;
+
+	/** Number of threat reports received. Divides EnemiesNearKingSum. */
+	UPROPERTY(BlueprintReadWrite, Category = "Round|King")
+	int32 KingThreatReportCount = 0;
+
+	/** Highest simultaneous enemy count seen inside the danger radius. */
+	UPROPERTY(BlueprintReadWrite, Category = "Round|King")
+	int32 PeakEnemiesNearKing = 0;
+
+	/** Running sum of per-report enemy counts near the King. */
+	UPROPERTY(BlueprintReadWrite, Category = "Round|King")
+	float EnemiesNearKingSum = 0.f;
+
 	/** Clears every accumulator. Call at the start of each round. */
 	void Reset()
 	{
@@ -172,6 +212,18 @@ struct FPlayerRoundStats
 	float GetAverageClustering() const
 	{
 		return PositionSampleCount > 0 ? ClusteringSampleSum / static_cast<float>(PositionSampleCount) : 0.f;
+	}
+
+	/** Mean number of enemies inside the King danger radius per threat report. */
+	float GetAverageEnemiesNearKing() const
+	{
+		return KingThreatReportCount > 0 ? EnemiesNearKingSum / static_cast<float>(KingThreatReportCount) : 0.f;
+	}
+
+	/** Mean seconds the player needed per enemy killed. 0 when nothing died. */
+	float GetAverageTimeToKillSeconds() const
+	{
+		return EnemiesKilled > 0 ? TotalTimeToKillSeconds / static_cast<float>(EnemiesKilled) : 0.f;
 	}
 };
 
